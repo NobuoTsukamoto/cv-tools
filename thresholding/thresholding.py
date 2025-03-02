@@ -43,9 +43,12 @@ def main():
     nick_block_size_value = [51.0]
     nick_k_value = [-0.2]
 
-    image = cv2.imread(args.input, cv2.IMREAD_GRAYSCALE)
-    h, w = image.shape
+    image_org = cv2.imread(args.input, cv2.IMREAD_GRAYSCALE)
+    h, w = image_org.shape
     while True:
+        image_list = []
+        image = image_org.copy()
+        image_list.append(image)
 
         # Adaptive thresholding with Gaussian filter
         adaptive_gaussian_binary_image = cv2.adaptiveThreshold(
@@ -56,6 +59,7 @@ def main():
             int(gaussian_block_size[0]),
             int(gaussian_c_value[0]),
         )
+        image_list.append(adaptive_gaussian_binary_image)
 
         # Adaptive thresholding with mean filter
         adaptive_mean_binary_image = cv2.adaptiveThreshold(
@@ -66,21 +70,25 @@ def main():
             int(mean_block_size[0]),
             int(mean_c_value[0]),
         )
+        image_list.append(adaptive_mean_binary_image)
 
         # Otsu's thresholding
         _, otsu_binary_image = cv2.threshold(
             image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
         )
+        image_list.append(otsu_binary_image)
 
         # Thresh Triangle
         _, thresh_triangle_image = cv2.threshold(
             image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_TRIANGLE
         )
+        image_list.append(thresh_triangle_image)
 
         # Thresholding
         _, thresh_image = cv2.threshold(
             image, threshold_value[0], 255, cv2.THRESH_BINARY
         )
+        image_list.append(thresh_image)
 
         # Niblack thresholding
         niblack_binary_image = cv2.ximgproc.niBlackThreshold(
@@ -91,6 +99,7 @@ def main():
             k=niblack_k_value[0],
             binarizationMethod=cv2.ximgproc.BINARIZATION_NIBLACK,
         )
+        image_list.append(niblack_binary_image)
 
         # Sauvola thresholding
         sauvola_binary_image = cv2.ximgproc.niBlackThreshold(
@@ -102,6 +111,7 @@ def main():
             r=sauvola_r_value[0],
             binarizationMethod=cv2.ximgproc.BINARIZATION_SAUVOLA,
         )
+        image_list.append(sauvola_binary_image)
 
         # Wolf thresholding
         wolf_binary_image = cv2.ximgproc.niBlackThreshold(
@@ -112,6 +122,7 @@ def main():
             k=wolf_k_value[0],
             binarizationMethod=cv2.ximgproc.BINARIZATION_WOLF,
         )
+        image_list.append(wolf_binary_image)
 
         # NICK thresholding
         nick_binary_image = cv2.ximgproc.niBlackThreshold(
@@ -122,22 +133,21 @@ def main():
             k=nick_k_value[0],
             binarizationMethod=cv2.ximgproc.BINARIZATION_NICK,
         )
+        image_list.append(nick_binary_image)
 
         display_image = np.full((h * 4, w * 4), 127, np.uint8)
 
-        display_image[0:h, 0:w] = image
-        display_image[0:h, w : w * 2] = otsu_binary_image
-        display_image[0:h, w * 2 : w * 3] = adaptive_gaussian_binary_image
+        print(len(image_list))
+        idx = 0
+        for i in range(4):
+            for j in range(3):
+                start_y = i * h
+                start_x = j * w
 
-        display_image[h : h * 2, 0:w] = adaptive_mean_binary_image
-        display_image[h : h * 2, w : w * 2] = thresh_triangle_image
-        display_image[h : h * 2, w * 2 : w * 3] = thresh_image
-
-        display_image[h * 2 : h * 3, 0:w] = niblack_binary_image
-        display_image[h * 2 : h * 3, w : w * 2] = sauvola_binary_image
-        display_image[h * 2 : h * 3, w * 2 : w * 3] = wolf_binary_image
-
-        display_image[h * 3 : h * 4, 0:w] = nick_binary_image
+                display_image[start_y:start_y + h, start_x:start_x + w] = image_list[idx]
+                idx += 1
+                if idx >= len(image_list):
+                    break
 
         x = w * 3 + 10
         width = w - 20
